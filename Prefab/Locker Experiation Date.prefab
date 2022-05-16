@@ -44,9 +44,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_subfolders:
-    m_path: ReadOnly
+    m_path: ReadOnly/License
   m_fileName:
-    m_fileName: License
+    m_fileName: LicenseAppStartDate
     m_extensionNameWithoutDot: json
   m_debugPath: C:\Users\moi\Desktop\ActiveMe\2022_05_12_ProjectLocker\ProjectLocker/ReadOnly/License.json
 --- !u!1 &1680446948
@@ -370,7 +370,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 1
         m_CallState: 2
-  m_infoFetched: 1
 --- !u!1 &1291527544481234249
 GameObject:
   m_ObjectHideFlags: 0

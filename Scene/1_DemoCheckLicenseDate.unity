@@ -2613,7 +2613,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0c5142fd3f806d546a447f285734d059, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_defaultScene: 2_DemoApp
+  m_defaultScene: DemoProjectionWallGround
   m_reloadEventIfCurrent: 1
   m_loadingMode: 0
 --- !u!114 &2103677583

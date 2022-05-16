@@ -5,8 +5,10 @@ using UnityEngine;
 using Eloi;
 using System;
 using System.IO;
+using System.Linq;
+using UnityEngine.Events;
 
-public class Locker_FileAndfolderReadOnly : MonoBehaviour
+public class Locker_FileAndFolderReadOnly : MonoBehaviour
 {
     [Header("Set")]
     public Eloi.PrimitiveUnityEventExtra_Bool m_isValidePush;
@@ -20,6 +22,8 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
     public FilesAndDirectoryLock m_lockedInfo;
     public bool m_isLockerSaved;
 
+    public UnityEvent m_possibleCheatingDetected;
+
   
     private void Awake()
     {
@@ -29,19 +33,43 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
             SetLockerWithCurrentFilesAndFolder();
     }
 
+    public bool IsLockerIsCorrupted()
+    {
+        E_FileAndFolderUtility.IsContentAreNotEquals(m_readOnlyFileStorageLocker, m_readOnlyFileStorageLockerDouble, out bool areNotEquals);
+        return areNotEquals;
+    }
+    public void CheckAndPushIfLockerAreCorrupted()
+    {
+        if (IsLockerIsCorrupted())
+            m_possibleCheatingDetected.Invoke();
+    }
+
+
     [ContextMenu("Save current locker locker in memory")]
     public void SaveGivenLockerInMemory()
     {
         SaveGivenLockerInMemory(m_lockedInfo);
     }
+    public Eloi.AbstractMetaAbsolutePathFileMono m_readOnlyFileStorageLocker;
+    public Eloi.AbstractMetaAbsolutePathFileMono m_readOnlyFileStorageLockerDouble;
+    public Eloi.AbstractMetaAbsolutePathFileMono m_readOnlyFileStorageLastImportedImported;
+
     public void SaveGivenLockerInMemory(FilesAndDirectoryLock locker) {
-        PlayerPrefs.SetString(m_playerPerfsKey, JsonUtility.ToJson(locker));
+        string json = JsonUtility.ToJson(locker, true);
+        Eloi.E_FileAndFolderUtility.ExportByOverriding(m_readOnlyFileStorageLocker, json);
+        Eloi.E_FileAndFolderUtility.ExportByOverriding(m_readOnlyFileStorageLockerDouble, json);
     }
 
     public bool HasLocker()
     {
-        m_isLockerSaved = PlayerPrefs.HasKey(m_playerPerfsKey)
-            && !string.IsNullOrEmpty(PlayerPrefs.GetString(m_playerPerfsKey).Trim());
+        //m_isLockerSaved = PlayerPrefs.HasKey(m_playerPerfsKey)
+        //    && !string.IsNullOrEmpty(PlayerPrefs.GetString(m_playerPerfsKey).Trim());
+        //return m_isLockerSaved;
+        bool fileExist = E_FileAndFolderUtility.Exists(m_readOnlyFileStorageLocker);
+        if (!fileExist)
+            return false;
+        E_FileAndFolderUtility.ImportFileAsText(m_readOnlyFileStorageLocker, out string text);
+        m_isLockerSaved =  !string.IsNullOrEmpty(text.Trim());
         return m_isLockerSaved;
     }
 
@@ -52,9 +80,12 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
     public string m_debugPlayerPrefSaved;
     public void LoadLockerInMemory(out bool found, out FilesAndDirectoryLock lockerToAffect)
     {
-        try { 
-            m_debugPlayerPrefSaved = PlayerPrefs.GetString(m_playerPerfsKey);
-            lockerToAffect = JsonUtility.FromJson<FilesAndDirectoryLock>(m_debugPlayerPrefSaved);
+        try {
+           
+            E_FileAndFolderUtility.ImportFileAsText(m_readOnlyFileStorageLocker, out string text,"");
+            //m_debugPlayerPrefSaved = PlayerPrefs.GetString(m_playerPerfsKey);
+            m_debugPlayerPrefSaved = text;
+            lockerToAffect = JsonUtility.FromJson<FilesAndDirectoryLock>(text);
             found = true;
         }
         catch (Exception e )
@@ -77,6 +108,7 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
     public void LoadFilesAndFolderState()
     {
         GenerateLockStateFromFilesAndFolder(out  m_current);
+        Eloi.E_FileAndFolderUtility.ExportByOverriding(m_readOnlyFileStorageLastImportedImported, JsonUtility.ToJson(m_current,true));
 
     }
     [ContextMenu("Restore Locker From Memory")]
@@ -91,7 +123,11 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
     [ContextMenu("Push Locker Is Validity")]
     public void PushLockerIsValidity()
     {
-        m_isValidePush.Invoke(IsLockerValide());
+        bool isLockerCorrupted = IsLockerIsCorrupted();
+        m_isValidePush.Invoke( !isLockerCorrupted && IsLockerValide());
+        if(isLockerCorrupted)
+            m_possibleCheatingDetected.Invoke();
+
     }
 
 
@@ -111,14 +147,13 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
         }
         filesLock.m_files.m_lockSource.m_filesTracked.SetTo(fList.ToArray());
         filesLock.m_files.m_lockSource.GenerateSHA256(out string generated);
-
-
-        fList.Clear();
+        fList = new List<FileWithSizeContenKey>();
         foreach (var item in m_unityTrackInfo.m_directories.m_directectoriesPath)
         {
             if (Eloi.E_FileAndFolderUtility.Exists(item))
             {
-                foreach (string p in Directory.GetFiles(item.GetPath(), "*", m_searchFolderOption))
+                string[] paths = Directory.GetFiles(item.GetPath(), "*", m_searchFolderOption).OrderBy(k=>k).ToArray();
+                foreach (string p in paths)
                 {
                     root = AddFileInGroup(root, p, ref fList);
                 }
@@ -140,6 +175,7 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
         bool useContent = !(path.ToLower().EndsWith(".jpeg") ||
             path.ToLower().EndsWith(".jpg") ||
             path.ToLower().EndsWith(".png"));
+
         temp = new MetaAbsolutePathFile(path);
         Eloi.E_FileAndFolderUtility.GetRelativePathFrom(in root, temp, out IMetaRelativePathFileGet fileAsRelative);
         FileWithSizeContenKey fSize = new FileWithSizeContenKey();
@@ -155,6 +191,7 @@ public class Locker_FileAndfolderReadOnly : MonoBehaviour
 
         GenerateLockStateFromFilesAndFolder(out m_lockedInfo);
         SaveGivenLockerInMemory( m_lockedInfo);
+
     }
     public bool IsLockerValide() {
         return FilesAndDirectoryLock.AreLockEquals(in m_current, in m_lockedInfo);

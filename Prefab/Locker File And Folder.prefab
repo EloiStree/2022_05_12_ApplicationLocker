@@ -317,7 +317,7 @@ MonoBehaviour:
       - {fileID: 6370745165377760201}
       - {fileID: 6370745164037900972}
       - {fileID: 6370745164128122633}
-  m_searchFolderOption: 0
+  m_searchFolderOption: 1
   m_playerPerfsKey: LockerDefault
   m_current:
     m_files:
@@ -402,6 +402,7 @@ MonoBehaviour:
           25\n}\r\nReadOnly/Test.txt_1\r\nD\r\n"
         m_SHA256: d4330f6d7ce46cc8e09ed75393ebac2500a0575d017fcd024eebb6c49bb8476a
   m_isLockerSaved: 0
+  m_debugPlayerPrefSaved: 
 --- !u!114 &6370745165099404697
 MonoBehaviour:
   m_ObjectHideFlags: 0
